@@ -24,7 +24,7 @@ $ composer require onurzdgn/cloudflare-image-api
 
 ## Security
 
-If you discover any security related issues, please contact me via [htps://onurozdogan.com](https://onurozdogan.com/contact). All security vulnerabilities will be fixed as soon as possible.
+If you discover any security related issues, please contact me via [https://onurozdogan.com](https://onurozdogan.com/contact). All security vulnerabilities will be fixed as soon as possible.
 
 ## License
 
