@@ -16,7 +16,7 @@
             "homepage": "https://onurozdogan.com"
         }
     ],
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "prefer-stable": true,
     "require-dev": {
         "orchestra/testbench": "^9.1"
