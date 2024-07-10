@@ -8,7 +8,7 @@ use onurozdogan\CloudflareImageApi\Facades\CloudflareImageApi;
 /**
  * Class PackageServiceProvider.
  */
-class PackageServiceProvider extends ServiceProvider
+class CloudflareImageApiServiceProvider extends ServiceProvider
 {
     /**
      * Register any application services.
