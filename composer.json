@@ -18,6 +18,9 @@
     ],
     "minimum-stability": "dev",
     "prefer-stable": true,
+    "require": {
+        "guzzlehttp/guzzle": "^7.0"
+    },
     "require-dev": {
         "orchestra/testbench": "^9.1"
     }
