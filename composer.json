@@ -1,0 +1,23 @@
+{
+    "name": "onurozdogan/cloudflare-image-api",
+    "description": "Cloudflare Image API PHP Library",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Onurozdogan\\CloudflareImageApi\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "role": "Developer",
+            "name": "Onur ÖZDOĞAN",
+            "email": "onur_oz_dogan@hotmail.com",
+            "homepage": "https://onurozdogan.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require-dev": {
+        "orchestra/testbench": "^9.1"
+    }
+}
