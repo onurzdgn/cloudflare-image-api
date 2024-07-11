@@ -1,7 +1,14 @@
 {
     "name": "onurozdogan/cloudflare-image-api",
     "description": "Cloudflare Image API PHP Library",
-    "keywords": ["cloudflare", "image", "api", "php", "library", "laravel"],
+    "keywords": [
+        "cloudflare",
+        "image",
+        "api",
+        "php",
+        "library",
+        "laravel"
+    ],
     "version": "0.0.1",
     "type": "library",
     "license": "MIT",
@@ -25,5 +32,15 @@
     },
     "require-dev": {
         "orchestra/testbench": "^9.1"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "onurozdogan\\CloudflareImageAPI\\CloudflareImageAPIServiceProvider"
+            ],
+            "aliases": {
+                "CloudflareImageAPI": "onurozdogan\\CloudflareImageAPI\\Facades\\CloudflareImageAPI"
+            }
+        }
     }
 }
