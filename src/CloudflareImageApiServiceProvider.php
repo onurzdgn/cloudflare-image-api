@@ -18,7 +18,7 @@ class CloudflareImageApiServiceProvider extends ServiceProvider
     public function register()
     {
         $this->app->bind('cloudflare_image_api', CloudflareImageApi::class);
-        $this->mergeConfigFrom(__DIR__ . './../config/cloudflare-image-api.php', 'cloudflare-image-api');
+        $this->mergeConfigFrom(__DIR__ . './../config/cloudflareimageapi.php', 'cloudflareimageapi');
     }
 
     /**
