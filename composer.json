@@ -36,10 +36,10 @@
     "extra": {
         "laravel": {
             "providers": [
-                "onurozdogan\\CloudflareImageAPI\\CloudflareImageAPIServiceProvider"
+                "onurozdogan\\CloudflareImageApi\\CloudflareImageApiServiceProvider"
             ],
             "aliases": {
-                "CloudflareImageAPI": "onurozdogan\\CloudflareImageAPI\\Facade"
+                "CloudflareImageApi": "onurozdogan\\CloudflareImageApi\\Facade"
             }
         }
     }
