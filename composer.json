@@ -39,7 +39,7 @@
                 "onurozdogan\\CloudflareImageAPI\\CloudflareImageAPIServiceProvider"
             ],
             "aliases": {
-                "CloudflareImageAPI": "onurozdogan\\CloudflareImageAPI\\Facades\\CloudflareImageAPI"
+                "CloudflareImageAPI": "onurozdogan\\CloudflareImageAPI\\Facade"
             }
         }
     }
