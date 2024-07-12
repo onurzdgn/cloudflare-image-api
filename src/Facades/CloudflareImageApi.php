@@ -11,6 +11,6 @@ class CloudflareImageApi extends Facade
 {
     public static function getFacadeAccessor(): string
     {
-        return 'cloudflare-image-api';
+        return 'cloudflare_image_api';
     }
 }
