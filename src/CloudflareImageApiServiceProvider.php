@@ -39,8 +39,8 @@ class CloudflareImageApiServiceProvider extends ServiceProvider
     protected function configurePublishing()
     {
         if ($this->app->runningInConsole()) {
-            $this->publishes([__DIR__ . './../config/cloudflare-image-api.php' => config_path('cloudflare-image-api.php')],
-                'cloudflare-image-api');
+            $this->publishes([__DIR__ . './../config/cloudflareimageapi.php' => config_path('cloudflareimageapi.php')],
+                'cloudflareimageapi');
         }
     }
 }
