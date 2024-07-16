@@ -4,7 +4,6 @@ namespace onurozdogan\CloudflareImageApi;
 
 use Illuminate\Foundation\AliasLoader;
 use Illuminate\Support\ServiceProvider;
-use onurozdogan\CloudflareImageApi\Facades\CloudflareImageApi;
 
 /**
  * Class PackageServiceProvider.
