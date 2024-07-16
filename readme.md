@@ -13,7 +13,7 @@ This package is the code that I used in a single project and has been edited to 
 You can install the package via composer:
 
 ```bash
-$ composer require onurzdgn/cloudflare-image-api
+$ composer require onurozdogan/cloudflare-image-api
 ```
 
 ### Usage
