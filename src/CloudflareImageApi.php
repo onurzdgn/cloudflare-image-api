@@ -6,7 +6,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7;
 
-class CloudflarePhotoService
+class CloudflareImageApi
 {
     public function controlApiToken()
     {
