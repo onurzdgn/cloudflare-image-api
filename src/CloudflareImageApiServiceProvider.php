@@ -2,6 +2,7 @@
 
 namespace onurozdogan\CloudflareImageApi;
 
+use Illuminate\Foundation\AliasLoader;
 use Illuminate\Support\ServiceProvider;
 use onurozdogan\CloudflareImageApi\Facades\CloudflareImageApi;
 
@@ -29,6 +30,7 @@ class CloudflareImageApiServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->configurePublishing();
+        AliasLoader::getInstance()->alias('CloudflareImageApi', \onurozdogan\CloudflareImageApi\Facades\CloudflareImageApi::class);
     }
 
     /**
