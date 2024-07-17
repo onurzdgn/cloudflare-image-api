@@ -11,7 +11,7 @@ class CloudflareImageApi
     public function controlApiToken()
     {
         // Control Cloudflare API key
-        $apiKey = config('CLOUDFLARE_API_KEY');
+        $apiKey = config('cloudflareimageapi.api_key');
 
         if (empty($apiKey)) {
             return response()->json('Cloudflare API key is missing', 500);
@@ -44,8 +44,8 @@ class CloudflareImageApi
 
         $client = new Client();
 
-        $account_id = config('CLOUDFLARE_ACCOUNT_ID');
-        $api_token = config('CLOUDFLARE_API_KEY');
+        $account_id = config('cloudflareimageapi.account_id');
+        $api_token = config('cloudflareimageapi.api_key');
 
         try {
             $response = $client->request('POST', 'https://api.cloudflare.com/client/v4/accounts/' . $account_id . '/images/v2/direct_upload', [
@@ -66,7 +66,7 @@ class CloudflareImageApi
         }
     }
 
-    public function upload($photo)
+    public function upload($photo, $name)
     {
         if ($this->controlApiToken()->getStatusCode() !== 200) {
             return response()->json('Cloudflare API key is invalid', 500);
@@ -86,6 +86,7 @@ class CloudflareImageApi
                 'multipart' => [
                     [
                         'name' => 'file',
+                        'filename' => config('cloudflareimageapi.app_name') . '-' . $name ,
                         'contents' => Psr7\Utils::tryFopen($photo, 'r'),
                     ],
                 ]
@@ -103,7 +104,7 @@ class CloudflareImageApi
         }
     }
 
-    public function update($photoId, $newPhoto)
+    public function update($photoId, $newPhoto, $name)
     {
         // Cloudflare'daki fotoğrafı güncelleme işlemi
         $deleteStatus = $this->delete($photoId);
@@ -112,7 +113,7 @@ class CloudflareImageApi
             return false;
         }
 
-        $newPhotoId = $this->upload($newPhoto);
+        $newPhotoId = $this->upload($newPhoto, $name);
 
         if ($newPhotoId->getStatusCode() !== 200) {
             return false;
@@ -128,8 +129,8 @@ class CloudflareImageApi
         // Delete photo from Cloudflare
         $client = new Client();
 
-        $account_id = config('CLOUDFLARE_ACCOUNT_ID');
-        $api_token = config('CLOUDFLARE_API_KEY');
+        $account_id = config('cloudflareimageapi.account_id');
+        $api_token = config('cloudflareimageapi.api_key');
 
         try {
             $response = $client->request('DELETE', 'https://api.cloudflare.com/client/v4/accounts/' . $account_id . '/images/v1/' . $photoId, [
