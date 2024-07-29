@@ -61,8 +61,7 @@ class CloudflareImageApi
             return $tmpUrl;
         } catch (\Exception $e) {
             // If the request fails, show the error message
-            echo $e->getMessage();
-            return false;
+            return response()->json(['error' => 'Temporary URL could not be created. Resason: ' . $e->getMessage()], 500);
         }
     }
 
@@ -75,7 +74,7 @@ class CloudflareImageApi
 
         $tmpUrl = $this->createTmpUrl();
 
-        if ($tmpUrl === false) {
+        if ($tmpUrl->getStatusCode() !== 200) {
             return response()->json(['error' => 'Temporary URL could not be created'], 500);
         }
 
@@ -86,7 +85,7 @@ class CloudflareImageApi
                 'multipart' => [
                     [
                         'name' => 'file',
-                        'filename' => env('cloudflareimageapi.app_name') . '-' . $name ,
+                        'filename' => env('APP_NAME') . '-' . $name ,
                         'contents' => Psr7\Utils::tryFopen($photo, 'r'),
                     ],
                 ]
@@ -99,8 +98,7 @@ class CloudflareImageApi
             return response()->json(['photoId' => $photoId], 200);
         } catch (\Exception $e) {
             // If the request fails, show the error message
-            echo $e->getMessage();
-            return false;
+            return response()->json(['error' => 'Photo could not be updated. Reason: ' . $e->getMessage()], 500);
         }
     }
 
@@ -110,13 +108,13 @@ class CloudflareImageApi
         $deleteStatus = $this->delete($photoId);
 
         if ($deleteStatus->getStatusCode() !== 200) {
-            return false;
+            return response()->json(['error' => 'Photo could not be updated. Reason: ' . $deleteStatus->getOriginalContent()['error']], 500);
         }
 
         $newPhotoId = $this->upload($newPhoto, $name);
 
         if ($newPhotoId->getStatusCode() !== 200) {
-            return false;
+            return response()->json(['error' => 'Photo could not be updated. Reason: ' . $newPhotoId->getOriginalContent()['error']], 500);
         }
 
         $updatedPhotoId = $newPhotoId->getOriginalContent()['photoId'];
@@ -141,8 +139,7 @@ class CloudflareImageApi
 
             return response()->json(['message' => 'Photo deleted successfully'], 200);
         } catch (\Exception $e) {
-            echo $e->getMessage();
-            return response()->json(['error' => 'Photo could not be deleted'], 500);
+            return response()->json(['error' => 'Photo could not be deleted. Reason: ' . $e->getMessage()], 500);
         }
     }
 }
