@@ -58,7 +58,7 @@ class CloudflareImageApi
             $result = json_decode($response->getBody(), true);
             $tmpUrl = $result['result']['uploadURL'];
 
-            return $tmpUrl;
+            return response()->json(['tmpUrl' => $tmpUrl], 200);
         } catch (\Exception $e) {
             // If the request fails, show the error message
             return response()->json(['error' => 'Temporary URL could not be created. Resason: ' . $e->getMessage()], 500);
