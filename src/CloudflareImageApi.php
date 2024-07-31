@@ -70,13 +70,15 @@ class CloudflareImageApi
         if ($this->controlApiToken()->getStatusCode() !== 200) {
             return response()->json('Cloudflare API key is invalid', 500);
         }
-        // Download photo to Cloudflare
 
+        // Download photo to Cloudflare
         $tmpUrl = $this->createTmpUrl();
 
         if ($tmpUrl->getStatusCode() !== 200) {
             return response()->json(['error' => 'Temporary URL could not be created'], 500);
         }
+
+        $tmpUrl = $tmpUrl->getOriginalContent()['tmpUrl'];
 
         $client = new Client();
 
