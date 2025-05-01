@@ -6,7 +6,11 @@ This package is the code that I used in a single project and has been edited to 
 
 > Laravel >= 9
 >
+> Livewire >= 3
+>
 > Php >= 8.0
+>
+> Cloudflare Account
 
 ## Installation
 
