@@ -4,7 +4,8 @@ namespace onurozdogan\CloudflareImageApi;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Request;
-use GuzzleHttp\Psr7;
+use GuzzleHttp\Psr7\Utils;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class CloudflareImageApi
 {
@@ -78,7 +79,21 @@ class CloudflareImageApi
             return response()->json(['error' => 'Temporary URL could not be created'], 500);
         }
 
+        // Get the temporary URL from the response
         $tmpUrl = $tmpUrl->getOriginalContent()['tmpUrl'];
+
+        // Take file path
+        if (
+            $photo instanceof TemporaryUploadedFile ||
+            $photo instanceof UploadedFile
+        ) {
+            $path = $photo->getRealPath(); // FOr Livewire
+        } elseif (is_string($photo) && file_exists($photo)) {
+            $path = $photo; //For Laravel
+        } else {
+            // throw new \Exception("Geçersiz dosya: " . get_class($photo)); // For other types
+            return response()->json(['error' => 'Photo could not be updated. Can\'t reach or find photo.'], 500);
+        }
 
         $client = new Client();
 
@@ -87,8 +102,8 @@ class CloudflareImageApi
                 'multipart' => [
                     [
                         'name' => 'file',
-                        'filename' => env('APP_NAME') . '-' . $name ,
-                        'contents' => Psr7\Utils::tryFopen($photo, 'r'),
+                        'filename' => env('APP_NAME') . '-' . $name,
+                        'contents' => Utils::tryFopen($path, 'r'),
                     ],
                 ]
             ]);
