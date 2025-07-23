@@ -17,8 +17,15 @@ class CloudflareImageApiServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->app->bind('cloudflare_image_api', CloudflareImageApi::class);
-        $this->mergeConfigFrom(__DIR__ . './../config/cloudflareimageapi.php', 'cloudflareimageapi');
+        $this->app->bind('cloudflare_image_api', function ($app) {
+            $config = $app['config'];
+            return new CloudflareImageApi(
+                $config->get('cloudflareimageapi.api_key'),
+                $config->get('cloudflareimageapi.account_id'),
+                $config->get('cloudflareimageapi.app_name')
+            );
+        });
+        $this->mergeConfigFrom(__DIR__ . '/../config/cloudflareimageapi.php', 'cloudflareimageapi');
     }
 
     /**
@@ -40,8 +47,10 @@ class CloudflareImageApiServiceProvider extends ServiceProvider
     protected function configurePublishing()
     {
         if ($this->app->runningInConsole()) {
-            $this->publishes([__DIR__ . './../config/cloudflareimageapi.php' => config_path('cloudflareimageapi.php')],
-                'cloudflareimageapi');
+            $this->publishes(
+                [__DIR__ . '/../config/cloudflareimageapi.php' => config_path('cloudflareimageapi.php')],
+                'cloudflareimageapi'
+            );
         }
     }
 }
