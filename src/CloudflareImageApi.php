@@ -3,160 +3,281 @@
 namespace onurozdogan\CloudflareImageApi;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Utils;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\App;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class CloudflareImageApi
 {
+    /**
+     * The Guzzle HTTP client instance.
+     *
+     * @var Client
+     */
+    protected $client;
+
+    /**
+     * The Cloudflare API key.
+     *
+     * @var string
+     */
+    protected $apiKey;
+
+    /**
+     * The Cloudflare account ID.
+     *
+     * @var string
+     */
+    protected $accountId;
+
+    /**
+     * The application name.
+     *
+     * @var string
+     */
+    protected $appName;
+
+    /**
+     * Create a JSON response
+     * 
+     * @param array|string $data
+     * @param int $status
+     * @return \Illuminate\Http\JsonResponse
+     */
+    protected function jsonResponse($data, int $status = 200)
+    {
+        // Use Laravel's response if available
+        if (function_exists('response')) {
+            return response()->json($data, $status);
+        }
+
+        // Create a custom response otherwise
+        if (is_string($data)) {
+            $data = ['message' => $data];
+        }
+
+        $response = new class ($data, $status) {
+            protected $data;
+            protected $status;
+
+            public function __construct($data, $status)
+            {
+                $this->data = $data;
+                $this->status = $status;
+            }
+
+            public function getStatusCode()
+            {
+                return $this->status;
+            }
+
+            public function getOriginalContent()
+            {
+                return $this->data;
+            }
+
+            public function __toString()
+            {
+                return json_encode($this->data);
+            }
+        };
+
+        return $response;
+    }
+
+    /**
+     * Create a new CloudflareImageApi instance.
+     *
+     * @param string|null $apiKey Cloudflare API key
+     * @param string|null $accountId Cloudflare account ID
+     * @param string|null $appName Application name
+     * @return void
+     */
+    public function __construct(?string $apiKey = null, ?string $accountId = null, ?string $appName = null)
+    {
+        $this->client = new Client();
+
+        // Try to get config values first, then fall back to constructor parameters or environment variables
+        $this->apiKey = $apiKey ?? (function_exists('config') ? config('cloudflareimageapi.api_key') : env('CLOUDFLARE_API_KEY'));
+        $this->accountId = $accountId ?? (function_exists('config') ? config('cloudflareimageapi.account_id') : env('CLOUDFLARE_ACCOUNT_ID'));
+        $this->appName = $appName ?? (function_exists('config') ? config('cloudflareimageapi.app_name') : (env('APP_NAME') ?: 'CloudflareImageApi'));
+    }
+
+    /**
+     * Control Cloudflare API token.
+     *
+     * @return mixed
+     */
     public function controlApiToken()
     {
-        // Control Cloudflare API key
-        $apiKey = env('CLOUDFLARE_API_KEY');
-
-        if (empty($apiKey)) {
-            return response()->json('Cloudflare API key is missing', 500);
+        if (empty($this->apiKey)) {
+            return $this->jsonResponse(['error' => 'Cloudflare API key is missing'], 500);
         }
 
         try {
-            $client = new Client();
             $headers = [
-                'Authorization' => 'Bearer ' . $apiKey,
+                'Authorization' => 'Bearer ' . $this->apiKey,
             ];
             $request = new Request('GET', 'https://api.cloudflare.com/client/v4/user/tokens/verify', $headers);
-            $res = $client->sendAsync($request)->wait();
+            $res = $this->client->sendAsync($request)->wait();
 
             if ($res->getStatusCode() !== 200) {
-                return response()->json('Cloudflare API key is invalid', 500);
+                return $this->jsonResponse(['error' => 'Cloudflare API key is invalid'], 500);
             }
 
-            return response()->json(['message' => 'Cloudflare API key is valid'], 200);
+            return $this->jsonResponse(['message' => 'Cloudflare API key is valid'], 200);
         } catch (\Exception $e) {
-            return response()->json('Cloudflare API key is invalid', 500);
+            return $this->jsonResponse(['error' => 'Cloudflare API key is invalid: ' . $e->getMessage()], 500);
         }
     }
 
+    /**
+     * Create temporary URL for uploading photos to Cloudflare.
+     *
+     * @return mixed
+     */
     public function createTmpUrl()
     {
-        // Create temporary URL for upload photo to Cloudflare
-        if ($this->controlApiToken()->getStatusCode() !== 200) {
-            return response()->json('Cloudflare API key is invalid', 500);
+        $tokenCheck = $this->controlApiToken();
+        if ($tokenCheck->getStatusCode() !== 200) {
+            return $tokenCheck;
         }
 
-        $client = new Client();
-
-        $account_id = env('CLOUDFLARE_ACCOUNT_ID');
-        $api_token = env('CLOUDFLARE_API_KEY');
-
         try {
-            $response = $client->request('POST', 'https://api.cloudflare.com/client/v4/accounts/' . $account_id . '/images/v2/direct_upload', [
+            $response = $this->client->request('POST', 'https://api.cloudflare.com/client/v4/accounts/' . $this->accountId . '/images/v2/direct_upload', [
                 'headers' => [
-                    'Authorization' => 'Bearer ' . $api_token,
+                    'Authorization' => 'Bearer ' . $this->apiKey,
                 ],
             ]);
 
-            // If the request is successful, get the response
             $result = json_decode($response->getBody(), true);
             $tmpUrl = $result['result']['uploadURL'];
 
-            return response()->json(['tmpUrl' => $tmpUrl], 200);
+            return $this->jsonResponse(['tmpUrl' => $tmpUrl], 200);
+        } catch (GuzzleException $e) {
+            return $this->jsonResponse(['error' => 'Temporary URL could not be created. Reason: ' . $e->getMessage()], 500);
         } catch (\Exception $e) {
-            // If the request fails, show the error message
-            return response()->json(['error' => 'Temporary URL could not be created. Resason: ' . $e->getMessage()], 500);
+            return $this->jsonResponse(['error' => 'Temporary URL could not be created. Reason: ' . $e->getMessage()], 500);
         }
     }
 
-    public function upload($photo, $name)
+    /**
+     * Upload a photo to Cloudflare.
+     *
+     * @param TemporaryUploadedFile|UploadedFile|string $photo
+     * @param string $name
+     * @return mixed
+     */
+    public function upload($photo, string $name)
     {
-        if ($this->controlApiToken()->getStatusCode() !== 200) {
-            return response()->json('Cloudflare API key is invalid', 500);
+        $tokenCheck = $this->controlApiToken();
+        if ($tokenCheck->getStatusCode() !== 200) {
+            return $tokenCheck;
         }
 
-        // Download photo to Cloudflare
-        $tmpUrl = $this->createTmpUrl();
-
-        if ($tmpUrl->getStatusCode() !== 200) {
-            return response()->json(['error' => 'Temporary URL could not be created'], 500);
+        // Get temporary upload URL
+        $tmpUrlResponse = $this->createTmpUrl();
+        if ($tmpUrlResponse->getStatusCode() !== 200) {
+            return $this->jsonResponse(['error' => 'Temporary URL could not be created'], 500);
         }
 
-        // Get the temporary URL from the response
-        $tmpUrl = $tmpUrl->getOriginalContent()['tmpUrl'];
+        $tmpUrl = $tmpUrlResponse->getOriginalContent()['tmpUrl'];
 
-        // Take file path
-        if (
-            $photo instanceof TemporaryUploadedFile ||
-            $photo instanceof UploadedFile
-        ) {
-            $path = $photo->getRealPath(); // FOr Livewire
+        // Get file path
+        if ($photo instanceof TemporaryUploadedFile || $photo instanceof UploadedFile) {
+            $path = $photo->getRealPath();
         } elseif (is_string($photo) && file_exists($photo)) {
-            $path = $photo; //For Laravel
+            $path = $photo;
         } else {
-            // throw new \Exception("Geçersiz dosya: " . get_class($photo)); // For other types
-            return response()->json(['error' => 'Photo could not be updated. Can\'t reach or find photo.'], 500);
+            return $this->jsonResponse([
+                'error' => 'Photo could not be uploaded. Cannot reach or find photo.'
+            ], 500);
         }
-
-        $client = new Client();
 
         try {
-            $response = $client->request('POST', $tmpUrl, [
+            $response = $this->client->request('POST', $tmpUrl, [
                 'multipart' => [
                     [
                         'name' => 'file',
-                        'filename' => env('APP_NAME') . '-' . $name,
+                        'filename' => $this->appName . '-' . $name,
                         'contents' => Utils::tryFopen($path, 'r'),
                     ],
                 ]
             ]);
 
-            // If the request is successful, get the response
             $result = json_decode($response->getBody(), true);
             $photoId = $result['result']['id'];
 
-            return response()->json(['photoId' => $photoId], 200);
+            return $this->jsonResponse(['photoId' => $photoId], 200);
+        } catch (GuzzleException $e) {
+            return $this->jsonResponse(['error' => 'Photo could not be uploaded. Reason: ' . $e->getMessage()], 500);
         } catch (\Exception $e) {
-            // If the request fails, show the error message
-            return response()->json(['error' => 'Photo could not be updated. Reason: ' . $e->getMessage()], 500);
+            return $this->jsonResponse(['error' => 'Photo could not be uploaded. Reason: ' . $e->getMessage()], 500);
         }
     }
 
-    public function update($photoId, $newPhoto, $name)
+    /**
+     * Update a photo on Cloudflare.
+     *
+     * @param string $photoId
+     * @param TemporaryUploadedFile|UploadedFile|string $newPhoto
+     * @param string $name
+     * @return mixed
+     */
+    public function update(string $photoId, $newPhoto, string $name)
     {
-        // Cloudflare'daki fotoğrafı güncelleme işlemi
+        // Delete the existing photo first
         $deleteStatus = $this->delete($photoId);
-
         if ($deleteStatus->getStatusCode() !== 200) {
-            return response()->json(['error' => 'Photo could not be updated. Reason: ' . $deleteStatus->getOriginalContent()['error']], 500);
+            return $this->jsonResponse([
+                'error' => 'Photo could not be updated. Reason: ' .
+                    ($deleteStatus->getOriginalContent()['error'] ?? 'Failed to delete the existing photo')
+            ], 500);
         }
 
-        $newPhotoId = $this->upload($newPhoto, $name);
-
-        if ($newPhotoId->getStatusCode() !== 200) {
-            return response()->json(['error' => 'Photo could not be updated. Reason: ' . $newPhotoId->getOriginalContent()['error']], 500);
+        // Upload the new photo
+        $newPhotoResponse = $this->upload($newPhoto, $name);
+        if ($newPhotoResponse->getStatusCode() !== 200) {
+            return $this->jsonResponse([
+                'error' => 'Photo could not be updated. Reason: ' .
+                    ($newPhotoResponse->getOriginalContent()['error'] ?? 'Failed to upload new photo')
+            ], 500);
         }
 
-        $updatedPhotoId = $newPhotoId->getOriginalContent()['photoId'];
+        $updatedPhotoId = $newPhotoResponse->getOriginalContent()['photoId'];
 
-        return response()->json(['photoId' => $updatedPhotoId], 200);
+        return $this->jsonResponse(['photoId' => $updatedPhotoId], 200);
     }
 
-    public function delete($photoId)
+    /**
+     * Delete a photo from Cloudflare.
+     *
+     * @param string $photoId
+     * @return mixed
+     */
+    public function delete(string $photoId)
     {
-        // Delete photo from Cloudflare
-        $client = new Client();
-
-        $account_id = env('CLOUDFLARE_ACCOUNT_ID');
-        $api_token = env('CLOUDFLARE_API_KEY');
+        $tokenCheck = $this->controlApiToken();
+        if ($tokenCheck->getStatusCode() !== 200) {
+            return $tokenCheck;
+        }
 
         try {
-            $response = $client->request('DELETE', 'https://api.cloudflare.com/client/v4/accounts/' . $account_id . '/images/v1/' . $photoId, [
+            $response = $this->client->request('DELETE', 'https://api.cloudflare.com/client/v4/accounts/' . $this->accountId . '/images/v1/' . $photoId, [
                 'headers' => [
-                    'Authorization' => 'Bearer ' . $api_token,
+                    'Authorization' => 'Bearer ' . $this->apiKey,
                 ],
             ]);
 
-            return response()->json(['message' => 'Photo deleted successfully'], 200);
+            return $this->jsonResponse(['message' => 'Photo deleted successfully'], 200);
+        } catch (GuzzleException $e) {
+            return $this->jsonResponse(['error' => 'Photo could not be deleted. Reason: ' . $e->getMessage()], 500);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Photo could not be deleted. Reason: ' . $e->getMessage()], 500);
+            return $this->jsonResponse(['error' => 'Photo could not be deleted. Reason: ' . $e->getMessage()], 500);
         }
     }
 }
